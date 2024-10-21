@@ -1,3 +1,28 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# Игнорирование конфигурационного файла
+config.json
+config/config.json
+
+# Игнорирование всех файлов с расширением .env
+*.env
+
+# Игнорирование директории с логами
+logs/
+
+# Игнорирование файлов и папок IDEA
+.idea/
+*.iml
+*.iws
+out/
+
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
@@ -23,3 +48,4 @@ go.work.sum
 
 # env file
 .env
+
