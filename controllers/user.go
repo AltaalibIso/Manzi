@@ -1,17 +1,12 @@
 package controllers
 
 import (
-	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"log"
-	"manzi/config"
+	"manzi/services"
 	"net/http"
 )
 
-// RegisterHandler for /register
 func RegisterHandler(c *gin.Context) {
 	var user struct {
 		Username string `json:"username"`
@@ -23,21 +18,29 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	collection := config.Client.Database(config.Config.Database.Name).Collection("users")
-
-	err := collection.FindOne(context.TODO(), bson.M{"username": user.Username}).Err()
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		_, err := collection.InsertOne(context.TODO(), user)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
-			return
+	if err := services.ValidateUsernamePassword(user.Username, user.Password); err != nil {
+		// Проверяем тип ошибки и возвращаем соответствующий HTTP-статус
+		switch {
+		case errors.Is(err, services.ErrInvalidUsername):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid username. Must be 5-30 characters, with allowed characters: a-z, A-Z, 0-9, ., _, -"})
+		case errors.Is(err, services.ErrInvalidPassword):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid password. Must be 5-30 characters, with allowed characters: a-z, A-Z, 0-9, ., _, -"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Validation error"})
 		}
-		c.JSON(http.StatusCreated, gin.H{"message": "User registered"})
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking user existence"})
-		log.Printf("Error checking user existence: %v", err)
 		return
-	} else {
-		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 	}
+
+	err := services.RegisterUser(user.Username, user.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrUserAlreadyExists):
+			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered"})
 }
