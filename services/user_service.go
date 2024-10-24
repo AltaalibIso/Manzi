@@ -6,10 +6,10 @@ import (
 	"regexp"
 )
 
-var ErrUserAlreadyExists = errors.New("user already exists")
 var (
-	ErrInvalidUsername = errors.New("invalid username")
-	ErrInvalidPassword = errors.New("invalid password")
+	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrInvalidUsername   = errors.New("invalid username")
+	ErrInvalidPassword   = errors.New("invalid password")
 )
 
 // RegisterUser handles the logic of checking and registering a new user.

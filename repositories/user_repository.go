@@ -8,6 +8,8 @@ import (
 	"manzi/config"
 )
 
+var ErrInvalidInput = errors.New("input contains dangerous characters")
+
 func CheckUserExists(username string) (bool, error) {
 	collection := config.Client.Database(config.Config.Database.Name).Collection("users")
 

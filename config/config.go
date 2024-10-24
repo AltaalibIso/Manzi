@@ -21,9 +21,11 @@ type Struct struct {
 	} `json:"database"`
 }
 
-var Config Struct
-var WD string
-var Client *mongo.Client
+var (
+	Config Struct
+	WD     string
+	Client *mongo.Client
+)
 
 func ConnectMongoDB() {
 	var err error
