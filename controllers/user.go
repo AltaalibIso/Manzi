@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"manzi/repositories"
 	"manzi/services"
 	"net/http"
 )
@@ -26,7 +27,7 @@ func RegisterHandler(c *gin.Context) {
 		case errors.Is(err, services.ErrInvalidPassword):
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid password. Must be 5-30 characters, with allowed characters: a-z, A-Z, 0-9, ., _, -"})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Validation error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Validation error(username&password)"})
 		}
 		return
 	}
@@ -36,6 +37,8 @@ func RegisterHandler(c *gin.Context) {
 		switch {
 		case errors.Is(err, services.ErrUserAlreadyExists):
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		case errors.Is(err, repositories.ErrInvalidInput):
+			c.JSON(http.StatusConflict, gin.H{"error": "Validation error"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create user"})
 		}
