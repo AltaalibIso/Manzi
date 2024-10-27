@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type ConfigStruct struct {
+type Struct struct {
 	App struct {
 		Port string `json:"port"`
 	} `json:"app"`
@@ -32,18 +32,15 @@ type LogItem struct {
 	Message string    `json:"message"`
 }
 
-type LogDataStruct struct {
-	Log []LogItem `json:"log"`
-}
+var LogData []LogItem
 
 var (
-	Config  ConfigStruct
-	WD      string
-	Client  *mongo.Client
-	LogData LogDataStruct
+	Config Struct
+	WD     string
+	Client *mongo.Client
 )
 
-// HandleError handles errors, optionally suppressing log output.
+// HandleError handles errors and logs them.
 func HandleError(err error, suppressLog ...bool) {
 	if err != nil {
 		if len(suppressLog) == 0 || !suppressLog[0] {
@@ -65,10 +62,7 @@ func ConnectMongoDB() {
 
 	var err error
 	Client, err = mongo.Connect(context.TODO(), clientOptions)
-	if err != nil {
-		WriteLog("error", fmt.Sprintf("Failed to connect to MongoDB: %v", err))
-		HandleError(err)
-	}
+	HandleError(err)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
@@ -83,17 +77,13 @@ func ConnectMongoDB() {
 func LoadConfig() {
 	var err error
 	WD, err = os.Getwd()
-	if err != nil {
-		HandleError(err, true)
-	}
+	HandleError(err)
 
 	data, err := os.ReadFile(filepath.Join(WD, "config", "config.json"))
-	if err != nil {
-		HandleError(err, true)
-	}
+	HandleError(err)
 
 	if err = json.Unmarshal(data, &Config); err != nil {
-		HandleError(err, true)
+		HandleError(err)
 	}
 }
 
@@ -103,20 +93,17 @@ func InitLogFile() {
 	dir := filepath.Dir(filePath)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.Mkdir(dir, 0755); err != nil {
-			HandleError(err, true)
+			HandleError(err)
 		}
 	}
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		initialData := map[string][]struct{}{"log": {}}
 		file, err := os.Create(filePath)
-		if err != nil {
-			HandleError(err, true)
-		}
+		HandleError(err)
 		defer file.Close()
 
-		if err := json.NewEncoder(file).Encode(initialData); err != nil {
-			HandleError(err, true)
+		if err := json.NewEncoder(file).Encode([]LogItem{}); err != nil {
+			HandleError(err)
 		}
 	}
 }
@@ -124,14 +111,12 @@ func InitLogFile() {
 // ReadLogJson reads the log data from the JSON file.
 func ReadLogJson() {
 	file, err := os.Open(filepath.Join(WD, Config.Log.PathFile))
-	if err != nil {
-		HandleError(err, true)
-	}
+	HandleError(err)
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&LogData); err != nil {
-		HandleError(err, true)
+		HandleError(err)
 	}
 }
 
@@ -143,17 +128,13 @@ func WriteLog(logType, message string) {
 		Message: message,
 	}
 
-	LogData.Log = append(LogData.Log, newLog)
+	LogData = append(LogData, newLog)
 
 	filePath := filepath.Join(WD, Config.Log.PathFile)
 	file, err := os.OpenFile(filePath, os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		HandleError(err, true)
-	}
+	HandleError(err)
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(LogData); err != nil {
-		HandleError(err, true)
-	}
+	HandleError(encoder.Encode(LogData))
 }
