@@ -14,6 +14,7 @@ import (
 
 func main() {
 	defer func() {
+		// Handle panic
 		if r := recover(); r != nil {
 			config.WriteLog("info", "Application stopped due to panic")
 			color.Blue("====================================")
@@ -27,33 +28,32 @@ func main() {
 	color.Cyan("  Starting Manzi Microservice...")
 	color.Blue("====================================")
 
-	config.LoadConfig()
-	config.InitLogFile()
-	config.ReadLogJson()
-	config.WriteLog("info", "Application started")
+	config.LoadConfig()                            // Load configuration
+	config.InitLogFile()                           // Initialize log file
+	config.ReadLogJson()                           // Read logs in JSON format
+	config.WriteLog("info", "Application started") // Log application start
 
-	config.ConnectMongoDB()
-	config.WriteLog("info", "Connected to MongoDB successfully!")
+	config.ConnectMongoDB()                                       // Connect to MongoDB
+	config.WriteLog("info", "Connected to MongoDB successfully!") // Log successful connection
 
-	// Настройка канала для обработки сигналов
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM) // Handle termination signals
 
-	router := gin.Default()
-	routes.InitUserRoutes(router)
+	router := gin.Default()       // Initialize router
+	routes.InitUserRoutes(router) // Initialize user routes
 
-	color.Green("Listening on port: %s", config.Config.App.Port)
+	color.Green("Listening on port: %s", config.Config.App.Port) // Output port
 
 	go func() {
+		// Start HTTP server
 		if err := http.ListenAndServe(config.Config.App.Port, router); err != nil {
 			config.WriteLog("error", err.Error())
 			log.Fatal(err)
 		}
 	}()
 
-	// Ожидание сигнала завершения
-	<-signalChan
-	config.WriteLog("info", "Application stopped due to external signal")
+	<-signalChan                                                          // Wait for termination signal
+	config.WriteLog("info", "Application stopped due to external signal") // Log application stop
 	color.Blue("====================================")
 	color.Red("  Stopping Manzi Microservice due to external signal...")
 	color.Blue("====================================")

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type Struct struct {
+type ConfigStruct struct {
 	App struct {
 		Port string `json:"port"`
 	} `json:"app"`
@@ -37,15 +37,15 @@ type LogDataStruct struct {
 }
 
 var (
-	Config  Struct
+	Config  ConfigStruct
 	WD      string
 	Client  *mongo.Client
 	LogData LogDataStruct
 )
 
+// HandleError handles errors, optionally suppressing log output.
 func HandleError(err error, suppressLog ...bool) {
 	if err != nil {
-		// Проверяем, передан ли параметр suppressLog, и его значение
 		if len(suppressLog) == 0 || !suppressLog[0] {
 			WriteLog("info", "Application stopped")
 		}
@@ -57,10 +57,11 @@ func HandleError(err error, suppressLog ...bool) {
 	}
 }
 
+// ConnectMongoDB connects to the MongoDB database.
 func ConnectMongoDB() {
 	clientOptions := options.Client().
 		ApplyURI(Config.Database.URI).
-		SetConnectTimeout(5 * time.Second) // Устанавливаем тайм-аут для подключения
+		SetConnectTimeout(5 * time.Second)
 
 	var err error
 	Client, err = mongo.Connect(context.TODO(), clientOptions)
@@ -69,20 +70,18 @@ func ConnectMongoDB() {
 		HandleError(err)
 	}
 
-	// Устанавливаем тайм-аут для пинга
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
 
-	err = Client.Ping(ctx, nil)
-	if err != nil {
+	if err = Client.Ping(ctx, nil); err != nil {
 		WriteLog("error", fmt.Sprintf("Failed to ping MongoDB: %v", err))
 		HandleError(err)
 	}
 }
 
+// LoadConfig loads the application configuration from a JSON file.
 func LoadConfig() {
 	var err error
-
 	WD, err = os.Getwd()
 	if err != nil {
 		HandleError(err, true)
@@ -93,27 +92,23 @@ func LoadConfig() {
 		HandleError(err, true)
 	}
 
-	err = json.Unmarshal(data, &Config)
-	if err != nil {
+	if err = json.Unmarshal(data, &Config); err != nil {
 		HandleError(err, true)
 	}
 }
 
+// InitLogFile initializes the log file.
 func InitLogFile() {
 	filePath := filepath.Join(WD, Config.Log.PathFile)
 	dir := filepath.Dir(filePath)
-	// Проверка и создание директории, если она не существует
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.Mkdir(dir, 0755); err != nil {
 			HandleError(err, true)
 		}
 	}
 
-	// Проверка и создание файла log.json, если его нет
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		initialData := map[string][]struct{}{"log": {}}
-
-		// Создание и запись шаблонного JSON в файл
 		file, err := os.Create(filePath)
 		if err != nil {
 			HandleError(err, true)
@@ -126,17 +121,13 @@ func InitLogFile() {
 	}
 }
 
+// ReadLogJson reads the log data from the JSON file.
 func ReadLogJson() {
 	file, err := os.Open(filepath.Join(WD, Config.Log.PathFile))
 	if err != nil {
 		HandleError(err, true)
 	}
-
-	defer func() {
-		if cerr := file.Close(); cerr != nil {
-			HandleError(err, true)
-		}
-	}()
+	defer file.Close()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&LogData); err != nil {
@@ -144,6 +135,7 @@ func ReadLogJson() {
 	}
 }
 
+// WriteLog writes a new log entry to the log file.
 func WriteLog(logType, message string) {
 	newLog := LogItem{
 		Type:    logType,

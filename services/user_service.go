@@ -31,24 +31,24 @@ func RegisterUser(username, password string) error {
 	return nil
 }
 
-// ValidateUsernamePassword проверяет корректность username и password
+// ValidateUsernamePassword checks the validity of username and password.
 // Allowed characters: a-z, A-Z, 0-9, ., _, -.
 func ValidateUsernamePassword(username, password string) error {
-	// Проверка длины username
+	// Check username length
 	if len(username) < 5 || len(username) > 30 {
 		return ErrInvalidUsername
 	}
-	// Проверка допустимых символов в username
+	// Check valid characters in username
 	validUsername := regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 	if !validUsername.MatchString(username) {
 		return ErrInvalidUsername
 	}
 
-	// Проверка длины password
+	// Check password length
 	if len(password) < 5 || len(password) > 30 {
 		return ErrInvalidPassword
 	}
-	// Проверка допустимых символов в password (можно адаптировать под требования)
+	// Check valid characters in password (can be adapted as needed)
 	validPassword := regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 	if !validPassword.MatchString(password) {
 		return ErrInvalidPassword

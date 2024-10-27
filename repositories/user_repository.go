@@ -14,6 +14,7 @@ var (
 	DangerousCharsRegex = regexp.MustCompile(`[{}\[\]$:"';\\/*&|%<>"()+=?~` + "`" + `#]`)
 )
 
+// ValidateInput checks for dangerous characters in the input.
 func ValidateInput(input string) error {
 	if DangerousCharsRegex.MatchString(input) {
 		return ErrInvalidInput
@@ -21,6 +22,7 @@ func ValidateInput(input string) error {
 	return nil
 }
 
+// CheckUserExists checks if a user exists in the database.
 func CheckUserExists(username string) (bool, error) {
 	collection := config.Client.Database(config.Config.Database.Name).Collection("users")
 	if err := ValidateInput(username); err != nil {
@@ -36,13 +38,13 @@ func CheckUserExists(username string) (bool, error) {
 	return true, nil
 }
 
+// CreateUser inserts a new user into the database.
 func CreateUser(username, password string) error {
 	collection := config.Client.Database(config.Config.Database.Name).Collection("users")
 	if err := ValidateInput(username); err != nil {
 		return err
 	}
 	if err := ValidateInput(password); err != nil {
-		print(err.Error())
 		return err
 	}
 	_, err := collection.InsertOne(context.TODO(), bson.M{"username": username, "password": password})

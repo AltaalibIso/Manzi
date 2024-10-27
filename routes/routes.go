@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// InitUserRoutes init all user routs
+// InitUserRoutes initializes all user routes.
 func InitUserRoutes(router *gin.Engine) {
-	router.POST("/registration", controllers.RegisterHandler)
+	router.POST("/registration", controllers.RegisterHandler) // User registration route
 }
