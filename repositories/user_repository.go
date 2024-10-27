@@ -33,7 +33,6 @@ func CheckUserExists(username string) (bool, error) {
 	} else if err != nil {
 		return false, err
 	}
-
 	return true, nil
 }
 

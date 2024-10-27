@@ -16,6 +16,8 @@ config/config.json
 
 # Игнорирование директории с логами
 logs/
+logs/log.json
+log.json
 
 # Игнорирование файлов и папок IDEA
 .idea/
